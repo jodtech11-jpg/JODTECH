@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IAPL — Super Admin</title>
+  <meta name="description" content="IAPL Super Admin Panel — full control over all marketing lead data."/>
+  <link rel="stylesheet" href="styles.css"/>
+  <style>
+    /* ── Extra styles for Super Admin ── */
+    .badge-hot  { color:#ef4444; background:rgba(239,68,68,0.12); }
+    .badge-warm { color:#f59e0b; background:rgba(245,158,11,0.12); }
+    .badge-cold { color:#60a5fa; background:rgba(96,165,250,0.12); }
+
+    .status-pill { display:inline-block; padding:0.2rem 0.65rem; border-radius:20px; font-size:0.74rem; font-weight:600; }
+    .pill-green  { color:#10b981; background:rgba(16,185,129,0.12); }
+    .pill-yellow { color:#f59e0b; background:rgba(245,158,11,0.12); }
+    .pill-red    { color:#ef4444; background:rgba(239,68,68,0.12); }
+    .pill-gray   { color:#94a3b8; background:rgba(148,163,184,0.1); }
+
+    /* Login page */
+    .sa-login-wrap {
+      min-height:100vh; display:flex; align-items:center; justify-content:center;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(99,102,241,0.15) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 80%, rgba(168,85,247,0.10) 0%, transparent 55%),
+        var(--bg-primary);
+      padding:2rem;
+    }
+    .sa-login-card {
+      background:var(--bg-card); border:1px solid var(--border);
+      border-radius:20px; padding:3rem; max-width:440px; width:100%;
+      box-shadow:0 4px 40px rgba(0,0,0,0.5), 0 0 60px rgba(99,102,241,0.08);
+    }
+    .sa-badge {
+      display:inline-flex; align-items:center; gap:0.5rem;
+      background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3);
+      color:#ef4444; border-radius:20px; padding:0.3rem 0.9rem;
+      font-size:0.75rem; font-weight:700; letter-spacing:0.04em;
+      text-transform:uppercase; margin-bottom:1.25rem;
+    }
+    .pwd-wrap { position:relative; }
+    .pwd-wrap .form-control { padding-right:3rem; }
+    .pwd-toggle {
+      position:absolute; right:0.75rem; top:50%; transform:translateY(-50%);
+      background:none; border:none; cursor:pointer; font-size:1rem; padding:0.2rem;
+    }
+    .login-error {
+      display:none; align-items:center; gap:0.6rem;
+      background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3);
+      color:#ef4444; border-radius:var(--radius-sm);
+      padding:0.75rem 1rem; font-size:0.85rem; margin-bottom:1rem;
+    }
+    .back-link {
+      display:inline-flex; align-items:center; gap:0.4rem;
+      color:var(--text-muted); font-size:0.82rem; text-decoration:none;
+      margin-top:1.25rem; transition:var(--transition);
+    }
+    .back-link:hover { color:var(--text-primary); }
+
+    /* Admin nav extras */
+    .nav-admin-badge {
+      background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3);
+      color:#ef4444; border-radius:20px; padding:0.25rem 0.75rem;
+      font-size:0.73rem; font-weight:700; letter-spacing:0.04em; text-transform:uppercase;
+    }
+
+    /* Stats grid — 6 cards */
+    .sa-stats { display:grid; grid-template-columns:repeat(6,1fr); gap:0.85rem; margin-bottom:1.5rem; }
+    @media(max-width:1100px){ .sa-stats { grid-template-columns:repeat(3,1fr); } }
+    @media(max-width:600px) { .sa-stats { grid-template-columns:repeat(2,1fr); } }
+    .sa-stat {
+      background:var(--bg-card); border:1px solid var(--border);
+      border-radius:var(--radius); padding:1rem 1.25rem; transition:var(--transition);
+    }
+    .sa-stat:hover { border-color:var(--accent); transform:translateY(-2px); }
+    .sa-stat .lbl { font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.4rem; }
+    .sa-stat .val { font-size:1.75rem; font-weight:800; }
+    .sa-stat.c-purple .val { color:var(--accent-light); }
+    .sa-stat.c-red    .val { color:#ef4444; }
+    .sa-stat.c-amber  .val { color:#f59e0b; }
+    .sa-stat.c-blue   .val { color:#60a5fa; }
+    .sa-stat.c-green  .val { color:#10b981; }
+    .sa-stat.c-teal   .val { color:#2dd4bf; }
+
+    /* Industry tags */
+    .ind-tag {
+      display:inline-block; background:var(--bg-secondary); border:1px solid var(--border);
+      border-radius:6px; padding:0.2rem 0.6rem; font-size:0.78rem;
+      color:var(--text-secondary); margin:0.1rem;
+    }
+    .ind-tag b { color:var(--accent-light); margin-left:0.3rem; }
+
+    /* Edit modal — wider */
+    .modal-xl { max-width:780px; }
+    .edit-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .edit-grid .full { grid-column:span 2; }
+    @media(max-width:600px){
+      .edit-grid { grid-template-columns:1fr; }
+      .edit-grid .full { grid-column:span 1; }
+    }
+
+    /* Pill checkboxes (reuse from main) */
+    .pill-check { display:flex; flex-wrap:wrap; gap:0.5rem; }
+    .pill-check label {
+      display:flex; align-items:center; gap:0.4rem;
+      background:var(--bg-secondary); border:1px solid var(--border);
+      border-radius:20px; padding:0.35rem 0.8rem; cursor:pointer;
+      font-size:0.82rem; color:var(--text-secondary); transition:var(--transition);
+    }
+    .pill-check label:has(input:checked) { border-color:var(--accent); background:var(--accent-glow); color:var(--accent-light); }
+
+    /* Section head inside modal */
+    .edit-section-head {
+      font-size:0.72rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:0.08em; color:var(--text-muted);
+      padding:0.3rem 0; border-bottom:1px solid var(--border);
+      margin-bottom:0.25rem; grid-column:span 2;
+    }
+    @media(max-width:600px){ .edit-section-head { grid-column:span 1; } }
+  </style>
+</head>
+<body>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ══════════════════════════════════
+     LOGIN VIEW
+══════════════════════════════════ -->
+<div id="login-view" style="display:flex">
+  <div class="sa-login-wrap" style="width:100%">
+    <div class="sa-login-card">
+      <div class="sa-badge">🛡️ Super Admin Access</div>
+      <h1 style="font-size:1.7rem;font-weight:800;margin-bottom:0.35rem">Admin Login</h1>
+      <p style="color:var(--text-secondary);font-size:0.92rem;margin-bottom:2rem">
+        IAPL Lead Tracker — Restricted Panel
+      </p>
+
+      <div class="login-error" id="login-error">
+        ❌ Invalid username or password. Please try again.
+      </div>
+
+      <form onsubmit="doLogin(event)" novalidate>
+        <div class="form-group" style="margin-bottom:1rem">
+          <label style="font-size:0.82rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.03em" for="sa-username">Username</label>
+          <input id="sa-username" name="sa-username" class="form-control" type="text"
+            placeholder="Enter admin username" autocomplete="username" required/>
+        </div>
+
+        <div class="form-group" style="margin-bottom:1.5rem">
+          <label style="font-size:0.82rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.03em" for="sa-password">Password</label>
+          <div class="pwd-wrap">
+            <input id="sa-password" name="sa-password" class="form-control" type="password"
+              placeholder="Enter admin password" autocomplete="current-password" required/>
+            <button type="button" class="pwd-toggle" id="toggle-pwd" onclick="togglePassword()">👁️</button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">🔐 Sign In as Super Admin</button>
+      </form>
+
+      <div style="text-align:center">
+        <a href="index.html" class="back-link">← Back to main login</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     EDIT LEAD MODAL
+══════════════════════════════════ -->
+<div class="modal-overlay" id="edit-modal" onclick="if(event.target===this)closeEdit()">
+  <div class="modal modal-xl">
+    <div class="modal-header">
+      <h3>✏️ Edit Lead Entry</h3>
+      <button class="btn-close" onclick="closeEdit()">✕</button>
+    </div>
+    <form id="edit-form" onsubmit="saveEdit(event)" novalidate>
+      <div class="edit-grid">
+
+        <div class="edit-section-head">📅 Entry Info</div>
+        <div class="form-group">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">Date</label>
+          <input name="e-date" class="form-control" type="date"/>
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">MKT BY</label>
+          <input name="e-mktBy" class="form-control" type="text" placeholder="Marketing executive name"/>
+        </div>
+
+        <div class="edit-section-head">🏭 Customer Info</div>
+        <div class="form-group">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">Customer Name</label>
+          <input name="e-customerName" class="form-control" type="text"/>
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">Industry Type</label>
+          <select name="e-industryType" class="form-control">
+            <option value="">— Select —</option>
+            <option>Manufacturing</option><option>Pharmaceuticals</option>
+            <option>Automobile</option><option>Steel &amp; Metal</option>
+            <option>Textile</option><option>Food &amp; Beverage</option>
+            <option>Chemical</option><option>Oil &amp; Gas</option>
+            <option>Power &amp; Energy</option><option>Construction</option>
+            <option>IT / Technology</option><option>Healthcare</option>
+            <option>FMCG</option><option>Education</option>
+            <option>Government / PSU</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">Location</label>
+          <input name="e-location" class="form-control" type="text"/>
+        </div>
+
+        <div class="edit-section-head">📞 Contact</div>
+        <div class="form-group">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">Contact Name</label>
+          <input name="e-contactName" class="form-control" type="text"/>
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">Contact Number</label>
+          <input name="e-contactNumber" class="form-control" type="tel"/>
+        </div>
+        <div class="form-group full">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">Email Id</label>
+          <input name="e-emailId" class="form-control" type="email"/>
+        </div>
+
+        <div class="edit-section-head">🔧 Existing Setup</div>
+        <div class="form-group">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">Existing Product &amp; Capacity</label>
+          <input name="e-existingProduct" class="form-control" type="text"/>
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">Existing Vendor</label>
+          <input name="e-existingVendor" class="form-control" type="text"/>
+        </div>
+        <div class="form-group full">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">Current Services (O&amp;M / AMC)</label>
+          <div class="pill-check" style="margin-top:0.4rem">
+            <label><input type="checkbox" name="e-currentServices" value="O&M"/><span>⚙️ O&amp;M</span></label>
+            <label><input type="checkbox" name="e-currentServices" value="AMC"/><span>📋 AMC</span></label>
+            <label><input type="checkbox" name="e-currentServices" value="Both O&M &amp; AMC"/><span>✅ Both</span></label>
+            <label><input type="checkbox" name="e-currentServices" value="None"/><span>❌ None</span></label>
+          </div>
+        </div>
+
+        <div class="edit-section-head">📦 Requirements</div>
+        <div class="form-group">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">Require New Product</label>
+          <input name="e-requireNewProduct" class="form-control" type="text"/>
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">Require Capacity</label>
+          <input name="e-requireCapacity" class="form-control" type="text"/>
+        </div>
+        <div class="form-group full">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">Require Services (O&amp;M / AMC)</label>
+          <div class="pill-check" style="margin-top:0.4rem">
+            <label><input type="checkbox" name="e-requireServices" value="O&M"/><span>⚙️ O&amp;M</span></label>
+            <label><input type="checkbox" name="e-requireServices" value="AMC"/><span>📋 AMC</span></label>
+            <label><input type="checkbox" name="e-requireServices" value="Both O&M &amp; AMC"/><span>✅ Both</span></label>
+            <label><input type="checkbox" name="e-requireServices" value="None"/><span>❌ None</span></label>
+          </div>
+        </div>
+
+        <div class="edit-section-head">📁 Status &amp; Lead</div>
+        <div class="form-group">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">IAPL Profile Shared Status</label>
+          <select name="e-iaplProfileStatus" class="form-control">
+            <option value="">— Select —</option>
+            <option>Shared</option><option>Not Shared</option><option>Pending</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">Proposal Requirement Status</label>
+          <select name="e-proposalStatus" class="form-control">
+            <option value="">— Select —</option>
+            <option>Required</option><option>Not Required</option>
+            <option>Submitted</option><option>Under Preparation</option>
+            <option>Pending Approval</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">Lead Status</label>
+          <select name="e-leadStatus" class="form-control">
+            <option value="">— Select —</option>
+            <option>Hot</option><option>Warm</option><option>Cold</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">Next Action Plan</label>
+          <select name="e-nextActionPlan" class="form-control">
+            <option value="">— Select —</option>
+            <option>Follow Up Call</option><option>Meeting</option>
+            <option>Site Visit</option><option>Proposal Submission</option>
+            <option>Demo / Presentation</option><option>Technical Discussion</option>
+            <option>Awaiting Customer Response</option>
+            <option>Closed — Won</option><option>Closed — Lost</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">Next Action Date</label>
+          <input name="e-nextActionDate" class="form-control" type="date"/>
+        </div>
+        <div class="form-group full">
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary)">Discussion Summary / 1st Remarks</label>
+          <textarea name="e-discussionSummary" class="form-control" style="min-height:100px"></textarea>
+        </div>
+
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:1rem;margin-top:1.5rem">
+        <button type="button" class="btn btn-secondary" onclick="closeEdit()">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="width:auto;padding:0.7rem 2rem">💾 Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     ADMIN DASHBOARD VIEW
+══════════════════════════════════ -->
+<div id="admin-view" style="display:none">
+
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="logo-sm">🛡️</div>
+      <strong>IAPL Super Admin</strong>
+    </div>
+    <div class="nav-right">
+      <span class="nav-admin-badge" id="sa-admin-name">Super Admin</span>
+      <button class="btn btn-secondary" id="btn-show-leads" onclick="showSection('leads')" style="display:none">📊 Leads Dashboard</button>
+      <button class="btn btn-primary" id="btn-show-users" onclick="showSection('users')" style="width:auto; padding:0.4rem 1rem">👥 Manage Users</button>
+      <a href="index.html" class="btn btn-secondary" style="padding:0.4rem 0.9rem;font-size:0.82rem;text-decoration:none">← Main App</a>
+      <button class="btn btn-danger btn-logout" style="padding:0.4rem 0.9rem;font-size:0.82rem" onclick="doLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    
+    <!-- User Management Section -->
+    <div id="sec-users" style="display:none">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <h2>👥 User Management</h2>
+          <p>Create and manage accounts for all staff members.</p>
+        </div>
+        <button class="btn btn-primary" style="width:auto" onclick="toggleAddUserPanel()">+ Add New User</button>
+      </div>
+      <!-- Add User Form -->
+      <div class="form-card" id="add-user-panel" style="display:none; max-width:600px; margin-bottom:2rem; border-left:4px solid var(--accent)">
+        <h3 style="margin-bottom:1rem">➕ Create New Account</h3>
+        <form id="add-user-form" onsubmit="addUser(event)">
+          <div class="edit-grid">
+            <div class="form-group">
+              <label style="font-size:0.8rem">Full Name</label>
+              <input name="au-name" class="form-control" type="text" placeholder="e.g. Ramesh Babu" required/>
+            </div>
+            <div class="form-group">
+              <label style="font-size:0.8rem">Role</label>
+              <select name="au-role" class="form-control" required>
+                <option value="marketing">Marketing Team</option>
+                <option value="ho">Head Office</option>
+                <option value="superadmin">Super Admin</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label style="font-size:0.8rem">Username</label>
+              <input name="au-username" class="form-control" type="text" placeholder="e.g. ramesh_mkt" required/>
+            </div>
+            <div class="form-group">
+              <label style="font-size:0.8rem">Password</label>
+              <input name="au-password" class="form-control" type="text" placeholder="Set a password" required/>
+            </div>
+          </div>
+          <div style="display:flex; gap:1rem; margin-top:1.5rem">
+            <button type="submit" class="btn btn-primary" style="width:auto; padding:0.6rem 2rem">Save User</button>
+            <button type="button" class="btn btn-secondary" onclick="toggleAddUserPanel()">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header"><h3>Active Accounts</h3></div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leads Section -->
+    <div id="sec-leads">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+        <div>
+          <h2>🛡️ Super Admin Dashboard</h2>
+          <p>Full control over all marketing leads.</p>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="sa-stats">
+        <div class="sa-stat c-purple"><div class="lbl">Total Leads</div><div class="val" id="s-total">0</div></div>
+        <div class="sa-stat c-red">   <div class="lbl">🔥 Hot</div>   <div class="val" id="s-hot">0</div></div>
+        <div class="sa-stat c-amber"> <div class="lbl">☀️ Warm</div>  <div class="val" id="s-warm">0</div></div>
+        <div class="sa-stat c-blue">  <div class="lbl">❄️ Cold</div>  <div class="val" id="s-cold">0</div></div>
+        <div class="sa-stat c-green"> <div class="lbl">Profile Shared</div><div class="val" id="s-shared">0</div></div>
+        <div class="sa-stat c-teal">  <div class="lbl">Proposal Submitted</div><div class="val" id="s-proposal">0</div></div>
+      </div>
+
+      <!-- Top Industries -->
+      <div class="form-card" style="margin-bottom:1.5rem;padding:1rem 1.5rem">
+        <span style="font-size:0.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em">Top Industries: </span>
+        <span id="s-top-industries" style="margin-left:0.5rem"></span>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header" style="flex-wrap:wrap;gap:0.75rem">
+          <div>
+            <h3>Lead Submissions</h3>
+            <div class="tabs" style="margin-top:0.75rem;margin-bottom:0">
+              <button class="tab-btn sa-tab active" id="satab-all"  onclick="switchSaTab('all')">All</button>
+              <button class="tab-btn sa-tab"         id="satab-Hot"  onclick="switchSaTab('Hot')">🔥 Hot</button>
+              <button class="tab-btn sa-tab"         id="satab-Warm" onclick="switchSaTab('Warm')">☀️ Warm</button>
+              <button class="tab-btn sa-tab"         id="satab-Cold" onclick="switchSaTab('Cold')">❄️ Cold</button>
+            </div>
+          </div>
+          <div class="table-controls" id="dashboard-controls" style="flex-direction:column; align-items:flex-end; gap:0.5rem">
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap">
+              <select id="filter-status" class="form-control" style="width:130px; padding:0.4rem; font-size:0.75rem; border-color:var(--accent)" onchange="renderTable()">
+                <option value="">All Statuses</option>
+                <option value="Hot">🔥 Hot</option>
+                <option value="Warm">☀️ Warm</option>
+                <option value="Cold">❄️ Cold</option>
+              </select>
+              <select id="filter-industry" class="form-control" style="width:140px; padding:0.4rem; font-size:0.75rem" onchange="renderTable()">
+                <option value="">All Industries</option>
+              </select>
+              <select id="filter-location" class="form-control" style="width:140px; padding:0.4rem; font-size:0.75rem" onchange="renderTable()">
+                <option value="">All Locations</option>
+              </select>
+              <select id="filter-mkt" class="form-control" style="width:140px; padding:0.4rem; font-size:0.75rem" onchange="renderTable()">
+                <option value="">All MKT BY</option>
+              </select>
+              <input class="search-input" type="search" placeholder="🔍 Search..." style="width:160px" oninput="saSearch(this.value)" />
+            </div>
+            <button class="btn btn-success" onclick="exportCSV()" style="padding:0.4rem 1rem; font-size:0.78rem; width:fit-content">⬇ Export CSV</button>
+            <span id="result-count" style="font-size:0.8rem;color:var(--text-muted);white-space:nowrap"></span>
+          </div>
+        </div>
+
+        <div id="leads-table-container" style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Sl No.</th><th>Date</th><th>MKT BY</th><th>Customer / Industry</th><th>Location</th><th>Contact</th><th>Existing</th><th>Required</th><th>Profile</th><th>Proposal</th><th>Status</th><th>Summary</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="sa-tbody">
+              <tr><td colspan="13">
+                <div class="empty-state"><div class="empty-icon">📭</div><p>No leads yet.</p></div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="superadmin.js"></script>
+</body>
+</html>

@@ -1,14 +1,686 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/jod.jpeg" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Jod Tech</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IAPL — Marketing Lead Tracker</title>
+  <meta name="description" content="IAPL Marketing Lead Data Collection and Head Office Review Platform." />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Lead status badge extras */
+    .badge-hot {
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    .badge-warm {
+      color: #f59e0b;
+      background: rgba(245, 158, 11, 0.12);
+    }
+
+    .badge-cold {
+      color: #60a5fa;
+      background: rgba(96, 165, 250, 0.12);
+    }
+
+    /* Slim section divider label */
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 0.4rem 0.8rem;
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 1rem;
+    }
+
+    /* Sl No display chip */
+    .slno-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--accent-glow);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--accent-light);
+    }
+
+    /* Checkbox pill style */
+    .pill-check {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .pill-check label {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.4rem 0.9rem;
+      cursor: pointer;
+      font-size: 0.83rem;
+      color: var(--text-secondary);
+      transition: var(--transition);
+    }
+
+    .pill-check label:hover {
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
+
+    .pill-check input[type=checkbox] {
+      accent-color: var(--accent);
+    }
+
+    .pill-check input:checked+span {
+      color: var(--accent-light);
+    }
+
+    .pill-check label:has(input:checked) {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+    }
+
+    /* Lead status radio pills */
+    .lead-pills {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .lead-pill {
+      position: relative;
+    }
+
+    .lead-pill input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+    }
+
+    .lead-pill label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 1.4rem;
+      border-radius: 20px;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.88rem;
+      transition: var(--transition);
+      color: var(--text-muted);
+    }
+
+    .lead-pill input:checked+label {
+      border-color: currentColor;
+    }
+
+    .lead-pill.hot label {
+      color: #ef4444;
+    }
+
+    .lead-pill.hot input:checked+label {
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    .lead-pill.warm label {
+      color: #f59e0b;
+    }
+
+    .lead-pill.warm input:checked+label {
+      background: rgba(245, 158, 11, 0.12);
+    }
+
+    .lead-pill.cold label {
+      color: #60a5fa;
+    }
+
+    .lead-pill.cold input:checked+label {
+      background: rgba(96, 165, 250, 0.12);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Detail Modal -->
+  <div class="modal-overlay" id="detail-modal" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>📋 Lead Details</h3>
+        <button class="btn-close" onclick="closeModal()">✕</button>
+      </div>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+     LOGIN VIEW
+══════════════════════════════════ -->
+  <div id="login-view" class="view active">
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at top left,rgba(99,102,241,0.12) 0%,transparent 60%),
+    radial-gradient(ellipse at bottom right,rgba(6,182,212,0.08) 0%,transparent 60%),var(--bg-primary);padding:2rem;">
+      <div class="login-card">
+        <div class="brand-logo">⚡</div>
+        <h1>IAPL Lead Tracker</h1>
+        <p>Sign in to access your dashboard</p>
+
+        <!-- Error message -->
+        <div id="login-error" style="display:none;align-items:center;gap:0.6rem;
+        background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);
+        color:#ef4444;border-radius:8px;padding:0.75rem 1rem;font-size:0.85rem;margin-bottom:1rem">
+          Invalid username or password. Please try again.
+        </div>
+
+        <form onsubmit="doLogin(event)" novalidate>
+          <div class="form-group" style="margin-bottom:1rem;text-align:left">
+            <label
+              style="font-size:0.82rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.03em"
+              for="inp-username">Username</label>
+            <input id="inp-username" class="form-control" type="text" placeholder="Enter your username"
+              autocomplete="username" required style="margin-top:0.4rem" />
+          </div>
+          <div class="form-group" style="margin-bottom:1.5rem;text-align:left">
+            <label
+              style="font-size:0.82rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.03em"
+              for="inp-password">Password</label>
+            <div style="position:relative;margin-top:0.4rem">
+              <input id="inp-password" class="form-control" type="password" placeholder="Enter your password"
+                autocomplete="current-password" required style="padding-right:3rem" />
+              <button type="button" id="btn-toggle-pwd" onclick="togglePwd()"
+                style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1rem">👁️</button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Sign In →</button>
+        </form>
+
+        <p style="margin-top:1.25rem;font-size:0.75rem;color:var(--text-muted)">
+          🛡️ Super Admin? Use your admin credentials to sign in.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+     SHARED NAVBAR
+══════════════════════════════════ -->
+  <nav class="navbar" id="main-nav" style="display:none">
+    <div class="nav-brand">
+      <div class="logo-sm">⚡</div>
+      <strong>IAPL Lead Tracker</strong>
+    </div>
+    <div class="nav-right">
+      <span class="badge-role" id="nav-role-badge"></span>
+      <span style="font-size:0.85rem;color:var(--text-secondary)" id="nav-user-name"></span>
+      <button class="btn btn-secondary btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════
+     FORM VIEW — Marketing Team
+══════════════════════════════════ -->
+  <div id="form-view" class="view">
+    <div class="main-content">
+
+      <div class="page-header"
+        style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+        <div>
+          <h2> New Lead Entry</h2>
+          <p>Fill in the customer &amp; lead details. Fields marked <span style="color:var(--danger)">*</span> are
+            required.</p>
+        </div>
+        <div class="slno-chip">
+          Sl. No. &nbsp;<span id="display-slno">#001</span>
+        </div>
+      </div>
+
+      <form id="mkt-form" onsubmit="submitForm(event)" novalidate>
+
+        <!-- ── Section 1: Entry Info ── -->
+        <div class="form-card">
+          <h3> Entry Information</h3>
+          <div class="form-grid">
+
+            <div class="form-group">
+              <label class="required" for="f-date">Date</label>
+              <input id="f-date" name="f-date" class="form-control" type="date" required />
+              <span class="field-error">This field is required</span>
+            </div>
+
+            <div class="form-group">
+              <label class="required" for="f-mktBy">MKT BY (Marketing Executive)</label>
+              <input id="f-mktBy" name="f-mktBy" class="form-control" type="text" placeholder="e.g. Ravi Kumar"
+                required />
+              <span class="field-error">This field is required</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── Section 2: Customer Info ── -->
+        <div class="form-card">
+          <h3>Customer Information</h3>
+          <div class="form-grid">
+
+            <div class="form-group">
+              <label class="required" for="f-customerName">Customer Name</label>
+              <input id="f-customerName" name="f-customerName" class="form-control" type="text"
+                placeholder="e.g. ABC Industries Pvt. Ltd." required />
+              <span class="field-error">This field is required</span>
+            </div>
+
+            <div class="form-group">
+              <label class="required" for="f-industryType">Industry Type</label>
+              <select id="f-industryType" name="f-industryType" class="form-control" required>
+                <option value="">— Select Industry —</option>
+                <option>Manufacturing</option>
+                <option>Pharmaceuticals</option>
+                <option>Automobile</option>
+                <option>Steel &amp; Metal</option>
+                <option>Textile</option>
+                <option>Food &amp; Beverage</option>
+                <option>Chemical</option>
+                <option>Oil &amp; Gas</option>
+                <option>Power &amp; Energy</option>
+                <option>Construction</option>
+                <option>IT / Technology</option>
+                <option>Healthcare</option>
+                <option>FMCG</option>
+                <option>Education</option>
+                <option>Government / PSU</option>
+                <option>Other</option>
+              </select>
+              <span class="field-error">This field is required</span>
+            </div>
+
+            <div class="form-group col-span-2">
+              <label class="required" for="f-location">Location</label>
+              <input id="f-location" name="f-location" class="form-control" type="text"
+                placeholder="e.g. Pune, Maharashtra" required />
+              <span class="field-error">This field is required</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── Section 3: Contact Details ── -->
+        <div class="form-card">
+          <h3> Contact Details</h3>
+          <div class="form-grid cols-3">
+
+            <div class="form-group">
+              <label class="required" for="f-contactName">Contact Name</label>
+              <input id="f-contactName" name="f-contactName" class="form-control" type="text"
+                placeholder="e.g. Mr. Suresh Patel" required />
+              <span class="field-error">This field is required</span>
+            </div>
+
+            <div class="form-group">
+              <label class="required" for="f-contactNumber">Contact Number</label>
+              <input id="f-contactNumber" name="f-contactNumber" class="form-control" type="tel"
+                placeholder="e.g. +91 98765 43210" required />
+              <span class="field-error">This field is required</span>
+            </div>
+
+            <div class="form-group">
+              <label for="f-emailId">Email Id</label>
+              <input id="f-emailId" name="f-emailId" class="form-control" type="email"
+                placeholder="e.g. contact@company.com" />
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── Section 4: Existing Setup ── -->
+        <div class="form-card">
+          <h3> Existing Setup at Customer Site</h3>
+          <div class="form-grid">
+
+            <div class="form-group">
+              <label for="f-existingProduct">Existing Product &amp; Capacity</label>
+              <input id="f-existingProduct" name="f-existingProduct" class="form-control" type="text"
+                placeholder="e.g. 500 kVA DG Set, 100 kW UPS" />
+            </div>
+
+            <div class="form-group">
+              <label for="f-existingVendor">Existing Vendor</label>
+              <input id="f-existingVendor" name="f-existingVendor" class="form-control" type="text"
+                placeholder="e.g. Cummins, Kirloskar" />
+            </div>
+
+            <div class="form-group col-span-2">
+              <label>Current Services (O&amp;M / AMC)</label>
+              <div class="pill-check" style="margin-top:0.4rem">
+                <label><input type="checkbox" name="currentServices" value="O&M" /><span> O&amp;M</span></label>
+                <label><input type="checkbox" name="currentServices" value="AMC" /><span> AMC</span></label>
+                <label><input type="checkbox" name="currentServices"
+                    value="Both O&M &amp; AMC" /><span>Both</span></label>
+                <label><input type="checkbox" name="currentServices" value="None" /><span>None</span></label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── Section 5: Requirements ── -->
+        <div class="form-card">
+          <h3> Customer Requirements</h3>
+          <div class="form-grid">
+
+            <div class="form-group">
+              <label for="f-requireNewProduct">Require New Product</label>
+              <input id="f-requireNewProduct" name="f-requireNewProduct" class="form-control" type="text"
+                placeholder="e.g. 750 kVA DG Set, Solar Inverter" />
+            </div>
+
+            <div class="form-group">
+              <label for="f-requireCapacity">Require Capacity</label>
+              <input id="f-requireCapacity" name="f-requireCapacity" class="form-control" type="text"
+                placeholder="e.g. 1 MVA, 200 kW" />
+            </div>
+
+            <div class="form-group col-span-2">
+              <label>Require Services (O&amp;M / AMC)</label>
+              <div class="pill-check" style="margin-top:0.4rem">
+                <label><input type="checkbox" name="requireServices" value="O&M" /><span> O&amp;M</span></label>
+                <label><input type="checkbox" name="requireServices" value="AMC" /><span> AMC</span></label>
+                <label><input type="checkbox" name="requireServices" value="Both O&M &amp; AMC" /><span>
+                    Both</span></label>
+                <label><input type="checkbox" name="requireServices" value="None" /><span> None</span></label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── Section 6: IAPL Status ── -->
+        <div class="form-card">
+          <h3>IAPL Status</h3>
+          <div class="form-grid">
+
+            <div class="form-group">
+              <label class="required" for="f-iaplProfileStatus">IAPL Profile Shared Status</label>
+              <select id="f-iaplProfileStatus" name="f-iaplProfileStatus" class="form-control" required>
+                <option value="">— Select Status —</option>
+                <option>Shared</option>
+                <option>Not Shared</option>
+                <option>Pending</option>
+              </select>
+              <span class="field-error">This field is required</span>
+            </div>
+
+            <div class="form-group">
+              <label class="required" for="f-proposalStatus">Proposal Requirement Status</label>
+              <select id="f-proposalStatus" name="f-proposalStatus" class="form-control" required>
+                <option value="">— Select Status —</option>
+                <option>Required</option>
+                <option>Not Required</option>
+                <option>Submitted</option>
+                <option>Under Preparation</option>
+                <option>Pending Approval</option>
+              </select>
+              <span class="field-error">This field is required</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── Section 7: Lead Status ── -->
+        <div class="form-card">
+          <h3>🌡️ Lead Status</h3>
+          <div class="form-group">
+            <label class="required">Lead Status (Hot / Warm / Cold)</label>
+            <div class="lead-pills" style="margin-top:0.6rem">
+              <div class="lead-pill hot">
+                <input type="radio" name="f-leadStatus" id="ls-hot" value="Hot" required />
+                <label for="ls-hot">🔥 Hot</label>
+              </div>
+              <div class="lead-pill warm">
+                <input type="radio" name="f-leadStatus" id="ls-warm" value="Warm" />
+                <label for="ls-warm">☀️ Warm</label>
+              </div>
+              <div class="lead-pill cold">
+                <input type="radio" name="f-leadStatus" id="ls-cold" value="Cold" />
+                <label for="ls-cold">❄️ Cold</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Section 8: Remarks & Action ── -->
+        <div class="form-card">
+          <h3> Discussion &amp; Next Steps</h3>
+          <div class="form-grid full">
+
+            <div class="form-group">
+              <label class="required" for="f-discussionSummary">Discussion Summary / 1st Remarks</label>
+              <textarea id="f-discussionSummary" name="f-discussionSummary" class="form-control"
+                style="min-height:120px"
+                placeholder="Summarise the discussion, key points raised, customer pain points, interest level..."
+                required></textarea>
+              <span class="field-error">This field is required</span>
+            </div>
+
+            <div class="form-grid" style="margin-top:0">
+
+              <div class="form-group">
+                <label class="required" for="f-nextActionPlan">Next Action Plan</label>
+                <select id="f-nextActionPlan" name="f-nextActionPlan" class="form-control" required>
+                  <option value="">— Select Action —</option>
+                  <option>Follow Up Call</option>
+                  <option>Meeting</option>
+                  <option>Site Visit</option>
+                  <option>Proposal Submission</option>
+                  <option>Demo / Presentation</option>
+                  <option>Technical Discussion</option>
+                  <option>Awaiting Customer Response</option>
+                  <option>Closed — Won</option>
+                  <option>Closed — Lost</option>
+                </select>
+                <span class="field-error">This field is required</span>
+              </div>
+
+              <div class="form-group">
+                <label for="f-nextActionDate">Follow-up / Action Date</label>
+                <input id="f-nextActionDate" name="f-nextActionDate" class="form-control" type="date" />
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" onclick="resetForm()"> Reset</button>
+          <button type="submit" class="btn btn-primary" style="width:auto;padding:0.75rem 2.5rem">
+            Submit Lead →
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+     DASHBOARD VIEW — Head Office
+══════════════════════════════════ -->
+  <div id="dashboard-view" class="view">
+    <div class="main-content">
+
+      <div class="page-header" style="display:flex; justify-content:space-between; align-items:center">
+        <div>
+          <h2>Head Office — Lead Review</h2>
+          <p>All marketing team submissions across regions. Use filters and search below.</p>
+        </div>
+        <div style="display:flex; gap:0.75rem">
+          <button class="btn btn-primary" id="ho-users-btn" onclick="switchTab('users')" style="width:auto; padding:0.5rem 1.25rem">Manage Users</button>
+          <button class="btn btn-secondary" id="ho-leads-btn" onclick="switchTab('all')" style="width:auto; padding:0.5rem 1.25rem; display:none">View Leads Dashboard</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card c-accent">
+          <div class="stat-label">Total Leads</div>
+          <div class="stat-value" id="stat-total">0</div>
+          <div class="stat-sub">All submissions</div>
+        </div>
+        <div class="stat-card c-danger">
+          <div class="stat-label">Hot</div>
+          <div class="stat-value" id="stat-hot">0</div>
+          <div class="stat-sub">High priority</div>
+        </div>
+        <div class="stat-card c-warning">
+          <div class="stat-label">Warm</div>
+          <div class="stat-value" id="stat-warm">0</div>
+          <div class="stat-sub">Medium priority</div>
+        </div>
+        <div class="stat-card" style="border-color:rgba(96,165,250,0.3)">
+          <div class="stat-label">Cold</div>
+          <div class="stat-value" id="stat-cold" style="color:#60a5fa">0</div>
+          <div class="stat-sub">Low priority</div>
+        </div>
+      </div>
+
+      <!-- Table Card -->
+      <div class="table-card">
+        <div class="table-header" style="flex-wrap:wrap;gap:0.75rem">
+          <div>
+            <h3 id="dashboard-title">Lead Submissions</h3>
+          </div>
+          <div class="table-controls" id="dashboard-controls"
+            style="flex-direction:column; align-items:flex-end; gap:0.5rem">
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap">
+              <select id="filter-status" class="form-control" style="width:130px; padding:0.4rem; font-size:0.75rem; border-color:var(--accent)" onchange="renderTable()">
+                <option value="">All Statuses</option>
+                <option value="Hot">Hot</option>
+                <option value="Warm">Warm</option>
+                <option value="Cold">Cold</option>
+              </select>
+              <select id="filter-industry" class="form-control" style="width:140px; padding:0.4rem; font-size:0.75rem"
+                onchange="renderTable()">
+                <option value="">All Industries</option>
+              </select>
+              <select id="filter-location" class="form-control" style="width:140px; padding:0.4rem; font-size:0.75rem"
+                onchange="renderTable()">
+                <option value="">All Locations</option>
+              </select>
+              <select id="filter-mkt" class="form-control" style="width:140px; padding:0.4rem; font-size:0.75rem"
+                onchange="renderTable()">
+                <option value="">All MKT BY</option>
+              </select>
+              <input class="search-input" type="search" placeholder="Search..." style="width:160px"
+                oninput="searchTable(this.value)" />
+            </div>
+            <button class="btn btn-success" onclick="exportCSV()"
+              style="padding:0.4rem 1rem; font-size:0.78rem; width:fit-content">Export CSV</button>
+          </div>
+        </div>
+
+        <!-- Leads Table -->
+        <div id="leads-table-container" style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Sl No.</th>
+                <th>Date</th>
+                <th>MKT BY</th>
+                <th>Customer Name</th>
+                <th>Industry</th>
+                <th>Location</th>
+                <th>Contact Name</th>
+                <th>Contact No.</th>
+                <th>Lead Status</th>
+                <th>Discussion Summary</th>
+                <th>Next Action Plan</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="submissions-tbody">
+              <tr>
+                <td colspan="12">
+                  <div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <p>No leads yet.</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Users Section (Hidden by default) -->
+        <div id="users-section-container" style="display:none; padding:1.5rem">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem">
+            <h4>Team Members</h4>
+            <button class="btn btn-primary" style="width:auto; padding:0.4rem 1rem; font-size:0.8rem"
+              onclick="toggleAddUser()">+ Add Marketing Member</button>
+          </div>
+
+          <div id="add-user-box"
+            style="display:none; background:var(--bg-secondary); padding:1.25rem; border-radius:12px; margin-bottom:1.5rem; border:1px solid var(--accent)">
+            <form id="ho-add-user-form" onsubmit="hoAddUser(event)">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Full Name</label>
+                  <input name="h-name" class="form-control" type="text" placeholder="e.g. Anil Kumar" required />
+                </div>
+                <div class="form-group">
+                  <label>Username</label>
+                  <input name="h-username" class="form-control" type="text" placeholder="e.g. anil_mkt" required />
+                </div>
+                <div class="form-group">
+                  <label>Password</label>
+                  <input name="h-password" class="form-control" type="text" placeholder="Set password" required />
+                </div>
+                <div class="form-group" style="display:flex; align-items:flex-end; gap:0.5rem">
+                  <button type="submit" class="btn btn-primary">Save Member</button>
+                  <button type="button" class="btn btn-secondary" onclick="toggleAddUser()">Cancel</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Username</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ho-users-tbody"></tbody>
+          </table>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // Patch showView to also toggle the navbar
+    const _baseShowView = showView;
+    showView = function (id) {
+      _baseShowView(id);
+      document.getElementById('main-nav').style.display = (id === 'login-view') ? 'none' : 'flex';
+    };
+  </script>
+</body>
+
 </html>
